@@ -570,18 +570,60 @@ export default {
     }
   },
   methods: {
-    changeJsonToString(payload){
+    changeJsonToString(payload) {
       return JSON.stringify(payload)
-    },  
+    },
     generateSwagger() {
       const self = this
 
       self.swaggerFile.info.title = self.title
       self.swaggerFile.info.description = self.description
-      let jsonReqBody = JSON.parse(self.requestBody)
-      let jsonResBody = JSON.parse(self.responseBody)
 
-      // let jsonReqBody = {
+      // self.requestBody = {
+      //   "qr": {
+      //     "qr_msg_header": {
+      //       "request_id": "MSG11111111101111111",
+      //       "service_name": "GENERATEQR",
+      //       "datetime": "YYYYMMDDHHMMSS"
+      //     },
+      //     "qr_request": {
+      //       "qr_type": "11",
+      //       "merchant_id": "MBUAT1000241",
+      //       "client_id": "xxxxxxxx",
+      //       "sale_amount": "1.00",
+      //       "currency_code": "USD",
+      //       "client_reference_id": "VDO11111111101111111",
+      //       "terminal_id": "CBOT001"
+      //     }
+      //   }
+      // }
+
+      // self.responseBody = {
+      //   "code": null,
+      //   "message": null,
+      //   "status": "OK",
+      //   "data": {
+      //     "qr": {
+      //       "qr_msg_header": {
+      //         "request_id": "MSG11111111101111111",
+      //         "service_name": "GENERATEQR",
+      //         "timestamp": "YYYYMMDDHHMMSS"
+      //       },
+      //       "qr_response": {
+      //         "qr_data": "00020101021226580014A000000615000101065887340212MBUAT10002410310000000000050400005303458540510.005802MY5909MBBOTHER6008SELANGOR62240520MBUAT1111111112726386304E67D",
+      //         "qr_reference_id": "MBUAT111111111272638"
+      //       }
+      //     }
+      //   }
+      // }
+
+      let jsonReqBody
+      let jsonResBody
+
+      jsonReqBody = self.isJson(self.requestBody) ? JSON.parse(self.requestBody) : self.requestBody
+      jsonResBody = self.isJson(self.responseBody) ? JSON.parse(self.responseBody) : self.responseBody
+
+      // jsonReqBody = {
       //   "corporateId": "MYMAYBANK",
       //   "accountNo": "012345678910",
       //   "accountCCY": "USD",
@@ -596,7 +638,7 @@ export default {
       //     }
       //   ]
       // }
-      // let jsonResBody = {
+      // jsonResBody = {
       //   "accountName": "ARISSA BAKERY",
       //   "accountCCY": "USD",
       //   "availBal": 100.1,
@@ -627,9 +669,6 @@ export default {
       self.swaggertRequestBody.content["application/json"].schema.properties = self.generatedReqBody
       self.swaggertResponseBody["200"].content["application/json"].schema.properties = self.generatedResBody
       self.swaggertResponseBody["200"].headers = self.headerResParameter
-      
-      // console.warn("lalala 1", self.swaggertRequestBody.content["application/json"].schema.properties);
-      // console.warn("lalala 2", self.swaggertResponseBody["200"].content["application/json"].schema.properties);
 
       self.swaggerFile.paths[self.path] = {}
       self.swaggerFile.paths[self.path][self.httpMethod] = {
@@ -640,8 +679,18 @@ export default {
         requestBody: self.swaggertRequestBody
       }
 
-      console.warn(self.swaggerFile);
+      // console.warn(self.swaggerFile);
     },
+
+    isJson(str) {
+      try {
+        JSON.parse(str);
+      } catch (e) {
+        return false;
+      }
+      return true;
+    },
+
     generateBody(objBody, payload) {
       const self = this
 
@@ -661,7 +710,26 @@ export default {
           }
 
         } else {
-          objBody = self.generateObject(objBody, key, payload[key])
+          if (typeof payload[key] === 'object' && payload[key] !== null) {
+            objBody[key] = {}
+            objBody[key].type = "object"
+            objBody[key].properties = {}
+            for (const key2 in payload[key]) {
+              objBody[key].properties[key2] = {}
+
+              let tempPayload = payload[key]
+              if (typeof tempPayload[key2] === 'object' && tempPayload[key2] !== null) {
+                objBody[key].properties[key2].type = "object"
+                objBody[key].properties[key2].properties = {}
+                self.generateBody(objBody[key].properties[key2].properties, tempPayload[key2])
+              } else {
+                self.generateObject(objBody[key].properties, key2, tempPayload[key2])
+              }
+
+            }
+          } else {
+            objBody = self.generateObject(objBody, key, payload[key])
+          }
         }
       }
 
@@ -669,6 +737,7 @@ export default {
     },
 
     generateObject(objBody, key, value) {
+
       objBody[key] = {}
       objBody[key].type = typeof value
       objBody[key].example = value
