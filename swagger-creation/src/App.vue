@@ -1,7 +1,7 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <img  alt="Swagger logo" width="30%" src="./assets/swagger.jpg">
+    <HelloWorld class="main-div" />
   </div>
 </template>
 
@@ -24,5 +24,9 @@ export default {
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+}
+
+.main-div{
+  padding-top: 1.5rem;
 }
 </style>
