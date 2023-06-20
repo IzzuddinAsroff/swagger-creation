@@ -1,56 +1,185 @@
 <template>
-  <div class="hello">
-    <div>
-      <span>API Title</span>
-      <input v-model="title" type="text">
+  <div>
+    <div class="gap-bottom">
+      <b-row>
+        <b-col sm="1"></b-col>
+        <b-col sm="3">
+          <div style="text-align: right;">
+            <span><b>API Title : </b> </span>
+          </div>
+        </b-col>
+        <b-col>
+          <b-form-input class="width-field" v-model="title" type="text"></b-form-input>
+        </b-col>
+      </b-row>
     </div>
-    <div>
-      <span>API path</span>
-      <input v-model="path" type="text">
+    <div class="gap-bottom">
+      <b-row>
+        <b-col sm="1"></b-col>
+        <b-col sm="3">
+          <div style="text-align: right;">
+            <span><b>API path : </b> </span>
+          </div>
+        </b-col>
+        <b-col>
+          <b-form-input class="width-field" v-model="path" type="text"></b-form-input>
+        </b-col>
+      </b-row>
     </div>
-    <div>
-      <span>API tags</span>
-      <input v-model="tag" type="text">
-    </div>
-    <div>
-      <span>Description</span>
-      <textarea v-model="description" rows="9" cols="50"></textarea>
-    </div>
-    <div>
-      <span>Request body json</span>
-      <textarea v-model="requestBody" rows="9" cols="50"></textarea>
-    </div>
-    <div>
-      <span>Response body json</span>
-      <textarea v-model="responseBody" rows="9" cols="50"></textarea>
+    <div class="gap-bottom">
+      <b-row>
+        <b-col sm="1"></b-col>
+        <b-col sm="3">
+          <div style="text-align: right;">
+            <span><b>API tags : </b> </span>
+          </div>
+        </b-col>
+        <b-col>
+          <b-form-input class="width-field" v-model="tag" type="text"></b-form-input>
+        </b-col>
+      </b-row>
     </div>
 
-    <br>
-    <!-- <div>
-      <span>Generated swagger</span>
-      <textarea v-model="swaggerFile" rows="4" cols="50"></textarea>
-    </div> -->
-    <button @click="generateSwagger()">Generate Swagger</button>
+    <div class="gap-bottom">
+      <b-row>
+        <b-col sm="1"></b-col>
+        <b-col sm="3">
+          <div style="text-align: right;">
+            <span><b>API methods : </b> </span>
+          </div>
+        </b-col>
+        <b-col>
+          <div style="text-align: left;">
+            <b-form-select class="width-field" v-model="httpMethod" :options="methodOptions"></b-form-select>
+          </div>
 
-    <br>
-
-    <div>
-      <span>Generated swagger file</span>
-      <textarea :value="changeJsonToString(swaggerFile)" id="" cols="50" rows="10" readonly></textarea>
+        </b-col>
+      </b-row>
     </div>
+
+    <div class="gap-bottom">
+      <span><b>Description</b></span>
+      <div>
+        <b-row>
+          <b-col sm="3"></b-col>
+          <b-col>
+            <b-form-textarea v-model="description" rows="10"></b-form-textarea>
+          </b-col>
+          <b-col sm="3"></b-col>
+        </b-row>
+      </div>
+    </div>
+
+
+    <div class="gap-bottom" v-if="httpMethod == 'post'">
+      <span><b>Required request X-MB Header : </b></span>
+
+      <b-form-group v-slot="{ ariaDescribedby }">
+        <b-form-radio v-model="isEnableHeder" :aria-describedby="ariaDescribedby" name="some-radios"
+          value=true>Yes</b-form-radio>
+        <b-form-radio v-model="isEnableHeder" :aria-describedby="ariaDescribedby" name="some-radios"
+          value=false>No</b-form-radio>
+      </b-form-group>
+    </div>
+
+    <div class="row">
+      <div class="col-1"></div>
+      <div class="col-5">
+        <span><b>Request body json</b></span>
+        <div v-if="httpMethod == 'post'">
+          <b-form-textarea v-model="requestBody" rows="15" cols="80"></b-form-textarea>
+        </div>
+        <div v-else>
+          <div class="pt-3">
+            <b-row>
+              <b-col>
+                <span><b>Number of parameter : </b> </span>
+              </b-col>
+              <b-col>
+                <b-form-input class="width-field" v-model="parameterNumber" type="number"></b-form-input>
+              </b-col>
+            </b-row>
+          </div>
+          <div class="pt-4">
+            <div class="pb-1" v-for="index in parseInt(getFieldNumber)" :key="index">
+              <b-row>
+                <b-col sm="2">
+                  <span><b>Field name : </b> </span>
+                </b-col>
+                <b-col sm="4">
+                  <b-form-input @blur="setFieldName($event.target.value, index)" type="text"></b-form-input>
+                </b-col>
+                <b-col sm="2">
+                  <span><b>Field value : </b> </span>
+                </b-col>
+                <b-col sm="4">
+                  <b-form-input @blur="setFieldValue($event.target.value, index)" type="text"></b-form-input>
+                </b-col>
+              </b-row>
+            </div>
+          </div>
+
+
+        </div>
+
+      </div>
+      <div class="col-5">
+        <span><b>Response body json</b></span>
+        <div>
+          <b-form-textarea v-model="responseBody" rows="15" cols="80"></b-form-textarea>
+        </div>
+
+      </div>
+      <div class="col-1"></div>
+    </div>
+
+    <div class="row" style="padding-top: 1rem;">
+      <div class="col-6" style="text-align: right;">
+        <b-button variant="success" @click="generateSwagger()">Generate Swagger</b-button>
+      </div>
+      <div class="col-6" style="text-align: left;">
+        <b-button variant="warning" @click="resetSwagger()">Reset Swagger</b-button>
+      </div>
+
+
+    </div>
+
+
+    <div style="padding-top: 1rem;">
+      <b>
+        <h4>Generated swagger file</h4>
+      </b>
+      <div class="pb2"><b-button variant="primary" @click="copyWording()">Copy Swagger</b-button></div>
+      <div class="pt-3">
+        <textarea :value="changeJsonToString(swaggerFile)" id="swaggerFileBox" rows="20" cols="120" readonly></textarea>
+      </div>
+    </div>
+
   </div>
 </template>
 
 <script>
 export default {
   name: 'HelloWorld',
+  created() {
+    const self = this
+
+    self.copySwaggerFile = self.$_.cloneDeep(self.swaggerFile)
+  },
   data() {
     return {
       title: "Corporate - Account Balance Inquiry",
       path: "/api/my/crp/v1/accountbalinq",
       tag: "Account Balance Inquiry",
       httpMethod: "post",
-      description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
+      description: "OK",
+      isEnableHeder: false,
+      copySwaggerFile: '',
+      parameterNumber: 1,
+      methodOptions: [{ value: "post", text: 'POST' },
+      { value: 'get', text: 'GET' }],
+      queryField: [],
+      queryValue: [],
       testA: {
         "corporateId": "MYMAYBANK",
         "accountNo": "012345678910",
@@ -569,117 +698,159 @@ export default {
       }
     }
   },
+  computed: {
+    getFieldNumber() {
+      return this.parameterNumber
+    }
+  },
   methods: {
+    setFieldName(payload, index) {
+      const self = this
+
+      let obj = {
+        index: index,
+        name: payload
+      }
+
+      if (self.queryField.length < 0) {
+        self.queryField.push(obj)
+      } else {
+        let findObj = self.queryField.find(el => {
+          return el.index == index
+        })
+
+        if (findObj) {
+          self.queryField.splice(index - 1, 1, obj);
+        } else {
+          self.queryField.push(obj)
+        }
+      }
+    },
+    setFieldValue(payload, index) {
+      const self = this
+
+      let obj = {
+        index: index,
+        name: payload
+      }
+
+      if (self.queryValue.length < 0) {
+        self.queryValue.push(obj)
+      } else {
+        let findObj = self.queryValue.find(el => {
+          return el.index == index
+        })
+
+        if (findObj) {
+          self.queryValue.splice(index - 1, 1, obj);
+        } else {
+          self.queryValue.push(obj)
+        }
+      }
+    },
     changeJsonToString(payload) {
       return JSON.stringify(payload)
     },
+    resetSwagger() {
+      const self = this
+
+      self.requestBody = ""
+      self.parameterNumber = 0
+      self.queryField = []
+      self.queryValue = []
+      setTimeout(() => {
+        self.parameterNumber = 1
+      }, 150);
+
+      self.responseBody = ""
+      self.swaggerFile = self.copySwaggerFile
+    },
     generateSwagger() {
       const self = this
+      self.swaggerFile = self.$_.cloneDeep(self.copySwaggerFile)
 
       self.swaggerFile.info.title = self.title
       self.swaggerFile.info.description = self.description
 
-      // self.requestBody = {
-      //   "qr": {
-      //     "qr_msg_header": {
-      //       "request_id": "MSG11111111101111111",
-      //       "service_name": "GENERATEQR",
-      //       "datetime": "YYYYMMDDHHMMSS"
-      //     },
-      //     "qr_request": {
-      //       "qr_type": "11",
-      //       "merchant_id": "MBUAT1000241",
-      //       "client_id": "xxxxxxxx",
-      //       "sale_amount": "1.00",
-      //       "currency_code": "USD",
-      //       "client_reference_id": "VDO11111111101111111",
-      //       "terminal_id": "CBOT001"
-      //     }
-      //   }
-      // }
-
-      // self.responseBody = {
-      //   "code": null,
-      //   "message": null,
-      //   "status": "OK",
-      //   "data": {
-      //     "qr": {
-      //       "qr_msg_header": {
-      //         "request_id": "MSG11111111101111111",
-      //         "service_name": "GENERATEQR",
-      //         "timestamp": "YYYYMMDDHHMMSS"
-      //       },
-      //       "qr_response": {
-      //         "qr_data": "00020101021226580014A000000615000101065887340212MBUAT10002410310000000000050400005303458540510.005802MY5909MBBOTHER6008SELANGOR62240520MBUAT1111111112726386304E67D",
-      //         "qr_reference_id": "MBUAT111111111272638"
-      //       }
-      //     }
-      //   }
-      // }
-
       let jsonReqBody
       let jsonResBody
+      if (self.httpMethod == 'post') {
+        jsonReqBody = self.isJson(self.requestBody) ? JSON.parse(self.requestBody) : self.requestBody
+        jsonResBody = self.isJson(self.responseBody) ? JSON.parse(self.responseBody) : self.responseBody
 
-      jsonReqBody = self.isJson(self.requestBody) ? JSON.parse(self.requestBody) : self.requestBody
-      jsonResBody = self.isJson(self.responseBody) ? JSON.parse(self.responseBody) : self.responseBody
+        self.generatedReqBody = self.generateBody(self.swaggertRequestBody.content["application/json"].schema.properties, jsonReqBody)
+        self.generatedResBody = self.generateBody(self.swaggertResponseBody["200"].content["application/json"].schema.properties, jsonResBody)
 
-      // jsonReqBody = {
-      //   "corporateId": "MYMAYBANK",
-      //   "accountNo": "012345678910",
-      //   "accountCCY": "USD",
-      //   "accountType": "Savings",
-      //   "provider": "MY",
-      //   "messageId": "APIGWYYYYMMDDHHMMSSXXXXXX",
-      //   "informations": [
-      //     {
-      //       "currency": "MYR",
-      //       "value": 10,
-      //       "sharingNumber": [1, 2, 3]
-      //     }
-      //   ]
-      // }
-      // jsonResBody = {
-      //   "accountName": "ARISSA BAKERY",
-      //   "accountCCY": "USD",
-      //   "availBal": 100.1,
-      //   "availBalSign": "C",
-      //   "ledgerBal": 100.1,
-      //   "ledgerBalSign": "C",
-      //   "currentBal": 100.1,
-      //   "currentBalSign": "C",
-      //   "ownBal": 100.1,
-      //   "ownBalSign": "C",
-      //   "holdAmt": 100.1,
-      //   "facilityLimit": 100.1,
-      //   "odAmt": 100.1,
-      //   "intraOd": 100.1,
-      //   "floatOne": 100.1,
-      //   "floatTwo": 100.1,
-      //   "ocLateFloat": 100.1,
-      //   "totalFloat": 100.1,
-      //   "utilisedAmt": 100.1,
-      //   "unutilisedAmt": 100.1
-      // }
+        console.log("generatedReqBody", self.generatedReqBody);
+        console.log("generatedResBody", self.generatedResBody);
+        self.swaggertRequestBody.content["application/json"].schema.properties = self.generatedReqBody
+        self.swaggertResponseBody["200"].content["application/json"].schema.properties = self.generatedResBody
+        self.swaggertResponseBody["200"].headers = self.headerResParameter
 
-      self.generatedReqBody = self.generateBody(self.swaggertRequestBody.content["application/json"].schema.properties, jsonReqBody)
-      self.generatedResBody = self.generateBody(self.swaggertResponseBody["200"].content["application/json"].schema.properties, jsonResBody)
+        self.swaggerFile.paths[self.path] = {}
+        self.swaggerFile.paths[self.path][self.httpMethod] = {
+          tags: [self.tag],
+          operationId: "",
+          responses: self.swaggertResponseBody,
+          requestBody: self.swaggertRequestBody
+        }
 
-      console.log("generatedReqBody", self.generatedReqBody);
-      console.log("generatedResBody", self.generatedResBody);
-      self.swaggertRequestBody.content["application/json"].schema.properties = self.generatedReqBody
-      self.swaggertResponseBody["200"].content["application/json"].schema.properties = self.generatedResBody
-      self.swaggertResponseBody["200"].headers = self.headerResParameter
+        if (self.isEnableHeder) {
+          self.swaggerFile.paths[self.path][self.httpMetsonResBodyhod].parameters = self.headerReqParameter
+        }
+      } else {
+        let queryArray = []
+        console.log('self.parameterNumber', self.parameterNumber);
+        for (let index = 1; index <= self.parameterNumber; index++) {
+          let findQueryName = self.queryField.find(el => {
+            return el.index == index
+          })
 
-      self.swaggerFile.paths[self.path] = {}
-      self.swaggerFile.paths[self.path][self.httpMethod] = {
-        tags: [self.tag],
-        operationId: "",
-        responses: self.swaggertResponseBody,
-        // parameters: self.headerReqParameter,
-        requestBody: self.swaggertRequestBody
+          let findQueryValue = self.queryValue.find(el => {
+            return el.index == index
+          })
+
+          let objQuery = {
+            name: findQueryName.name,
+            "in": "query",
+            "description": `Example value ${findQueryValue.name}`,
+            schema: {
+              type: typeof findQueryValue.name
+            }
+          }
+
+          console.log(objQuery);
+
+          queryArray.push(objQuery)
+        }
+
+        console.log(queryArray);
+
+        jsonResBody = self.isJson(self.responseBody) ? JSON.parse(self.responseBody) : self.responseBody
+
+        self.generatedResBody = self.generateBody(self.swaggertResponseBody["200"].content["application/json"].schema.properties, jsonResBody)
+
+        console.log("generatedResBody", self.generatedResBody);
+        self.swaggertResponseBody["200"].content["application/json"].schema.properties = self.generatedResBody
+        self.swaggertResponseBody["200"].headers = self.headerResParameter
+
+        self.swaggerFile.paths[self.path] = {}
+        self.swaggerFile.paths[self.path][self.httpMethod] = {
+          tags: [self.tag],
+          operationId: "",
+          responses: self.swaggertResponseBody,
+          parameters: queryArray
+        }
       }
 
       // console.warn(self.swaggerFile);
+    },
+
+    copyWording() {
+      const element = document.querySelector('#swaggerFileBox');
+      element.select();
+      element.setSelectionRange(0, 99999);
+      document.execCommand('copy');
     },
 
     isJson(str) {
@@ -765,4 +936,12 @@ export default {
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped></style>
+<style scoped>
+.width-field {
+  width: 50%;
+}
+
+.gap-bottom {
+  padding-bottom: 1rem;
+}
+</style>
